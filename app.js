@@ -3,11 +3,13 @@ import dotenv from "dotenv"
 import taskRouter from './routes/task.route.js';
 import { connectDB } from "./config/db.js";
 import authRouter from './routes/auth.route.js';
+import cors from 'cors';
 
 const app = express();
 
 dotenv.config()
 app.use(json());
+app.use(cors());
 app.use(express.json());
 
 // API is running page
