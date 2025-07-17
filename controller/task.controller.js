@@ -4,10 +4,18 @@ import User from '../models/user.model.js';
 // Get all tasks
 export async function getTasks(req, res) {
   try {
-    const { completed, search = '', page = 1, limit = 3 } = req.query;
+    const { completed, status, search = '', page = 1, limit = 3 } = req.query;
     let filter = {};
-    if (completed === "true") filter.completed = true;
-    else if (completed === "false") filter.completed = false;
+
+    if (status) {
+      const statusArr = status.split(',').map(s => s.trim());
+      filter.status = { $in: statusArr };
+    } else if (completed === "true") {
+      filter.completed = true;
+    } else if (completed === "false") {
+      filter.completed = false;
+    }
+
     if (search) filter.name = { $regex: search, $options: 'i' };
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -20,7 +28,6 @@ export async function getTasks(req, res) {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 }
-
 // Add a new task
 export async function addTask(req, res) {
   try {
