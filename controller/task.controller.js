@@ -3,12 +3,18 @@ import Task from '../models/task.model.js';
 // Get all tasks
 export async function getTasks(req, res) {
   try {
-    const { completed } = req.query;
+    const { completed, search = '', page = 1, limit = 3 } = req.query;
     let filter = {};
     if (completed === "true") filter.completed = true;
     else if (completed === "false") filter.completed = false;
-    const tasks = await Task.find(filter);
-    res.json(tasks);
+    if (search) filter.name = { $regex: search, $options: 'i' };
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const tasks = await Task.find(filter).skip(skip).limit(Number(limit));
+    const total = await Task.countDocuments(filter);
+
+    res.json({ tasks, total });
   } catch (error) {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
@@ -17,11 +23,11 @@ export async function getTasks(req, res) {
 // Add a new task
 export async function addTask(req, res) {
   try {
-    const { title } = req.body;
-    if (!title || typeof title !== "string" || title.trim() === "") {
-      return res.status(400).json({ error: 'Title is required and must not be empty' });
+    const { name } = req.body; // CHANGED from title
+    if (!name || typeof name !== "string" || name.trim() === "") {
+      return res.status(400).json({ error: 'Name is required and must not be empty' });
     }
-    const newTask = new Task({ title: title.trim() });
+    const newTask = new Task({ name: name.trim() }); // CHANGED from title
     await newTask.save();
     res.status(201).json(newTask);
   } catch (error) {
@@ -33,11 +39,14 @@ export async function addTask(req, res) {
 export async function completeTask(req, res) {
   try {
     const { id } = req.params;
+    const { status } = req.body;
     const task = await Task.findById(id);
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
-    task.completed = true;
+    if (status === "completed" || status === undefined) {
+      task.completed = true;
+    }
     await task.save();
     res.json(task);
   } catch (error) {
@@ -57,6 +66,42 @@ export async function deleteTask(req, res) {
     res.status(200).json({
             message: "Task Deleted!"
     })
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+}
+
+export const getProfile = async (req, res) => {
+  const userId = req.user.id;
+  console.log("req.user:", req.user);
+
+
+  try {
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "User profile fetched", data: user });
+  } catch (error) {
+    console.error("Failed to get user profile:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export async function logout(req, res) {
+  try {
+    if (req.session) {
+      req.session.destroy(err => {
+        if (err) {
+          return res.status(500).json({ error: 'Logout failed', details: err.message });
+        }
+        res.clearCookie('connect.sid');
+        res.json({ message: 'Logged out successfully' });
+      });
+    } else {
+      res.status(200).json({ message: 'No active session' });
+    }
   } catch (error) {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
