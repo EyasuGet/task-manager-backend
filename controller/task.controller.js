@@ -7,6 +7,8 @@ export async function getTasks(req, res) {
     const { completed, status, search = '', page = 1, limit = 3 } = req.query;
     let filter = {};
 
+    filter.user = req.user._id;
+
     if (status) {
       const statusArr = status.split(',').map(s => s.trim());
       filter.status = { $in: statusArr };
@@ -31,11 +33,11 @@ export async function getTasks(req, res) {
 // Add a new task
 export async function addTask(req, res) {
   try {
-    const { name } = req.body; // CHANGED from title
+    const { name } = req.body; 
     if (!name || typeof name !== "string" || name.trim() === "") {
       return res.status(400).json({ error: 'Name is required and must not be empty' });
     }
-    const newTask = new Task({ name: name.trim() }); // CHANGED from title
+    const newTask = new Task({ name: name.trim() });
     await newTask.save();
     res.status(201).json(newTask);
   } catch (error) {
