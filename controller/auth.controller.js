@@ -38,29 +38,39 @@ export const signup = async (req, res) => {
 
 
 export const login = async (req, res) => {
+  try {
     const { email, password } = req.body;
     console.log({ email, password });
-  
+
     let user = await User.findOne({ email });
     if (!user) {
-        user = await Nurse.findOne({ email });
+      user = await Nurse.findOne({ email });
     }
-  
+
     if (!user) {
-        return res.status(400).json({ message: "Invalid Email" });
+      return res.status(400).json({ message: "Invalid Email" });
     }
-  
+
     const matchp = await bcrypt.compare(password, user.password);
-  
+
     if (!matchp) {
-        return res.status(400).json({ message: "Invalid Password" });
+      return res.status(400).json({ message: "Invalid Password" });
     }
-  
+
+    if (!process.env.JWT_SECRET) {
+      // Defensive: make sure env var is set
+      return res.status(500).json({ message: "Server misconfiguration: JWT secret missing" });
+    }
+
     const token = jwt.sign(
-        { _id: user._id, email: user.email, user: user.name},
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+      { _id: user._id, email: user.email, user: user.name },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
     );
 
-    res.status(200).json({ message: "Logged in successfully", token});
+    return res.status(200).json({ message: "Logged in successfully", token });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
