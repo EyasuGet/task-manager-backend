@@ -44,7 +44,7 @@ export const login = async (req, res) => {
 
     let user = await User.findOne({ email });
     if (!user) {
-      user = await Nurse.findOne({ email });
+      user = await User.findOne({ email });
     }
 
     if (!user) {
@@ -55,11 +55,6 @@ export const login = async (req, res) => {
 
     if (!matchp) {
       return res.status(400).json({ message: "Invalid Password" });
-    }
-
-    if (!process.env.JWT_SECRET) {
-      // Defensive: make sure env var is set
-      return res.status(500).json({ message: "Server misconfiguration: JWT secret missing" });
     }
 
     const token = jwt.sign(
