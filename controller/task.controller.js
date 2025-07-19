@@ -33,11 +33,11 @@ export async function getTasks(req, res) {
 // Add a new task
 export async function addTask(req, res) {
   try {
-    const { name } = req.body; 
+    const { name } = req.body; // CHANGED from title
     if (!name || typeof name !== "string" || name.trim() === "") {
       return res.status(400).json({ error: 'Name is required and must not be empty' });
     }
-    const newTask = new Task({ name: name.trim() });
+    const newTask = new Task({ name: name.trim() , user: req.user._id}); // CHANGED from title
     await newTask.save();
     res.status(201).json(newTask);
   } catch (error) {

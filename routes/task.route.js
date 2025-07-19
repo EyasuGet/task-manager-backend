@@ -5,7 +5,7 @@ import verifyToken from '../middleware/auth.middleware.js';
 const taskRouter = Router();
 
 taskRouter.get('/',verifyToken, getTasks);
-taskRouter.post('/', addTask);
+taskRouter.post('/',verifyToken, addTask);
 taskRouter.put('/:id', completeTask);
 taskRouter.delete('/:id', deleteTask);
 taskRouter.patch('/:id/status', updateTaskStatus)
